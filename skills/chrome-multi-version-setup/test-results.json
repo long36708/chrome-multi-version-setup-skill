@@ -1,0 +1,120 @@
+{
+  "skill_name": "chrome-multi-version-setup",
+  "test_date": "2026-05-11",
+  "evaluations": [
+    {
+      "id": 1,
+      "name": "basic-install-test",
+      "prompt": "我想在 Windows 上安装 Chrome 127 版本用于测试，应该怎么操作？",
+      "expected_behavior": "应该提供详细的安装步骤，包括下载、解压、配置路径等完整流程",
+      "status": "pass",
+      "notes": "SKILL.md 提供了完整的 8 步安装流程，清晰易懂"
+    },
+    {
+      "id": 2,
+      "name": "path-customization-test",
+      "prompt": "我不想把 Chrome 装在 C 盘，可以装到 D 盘吗？",
+      "expected_behavior": "应该明确说明支持自定义路径，并提供 D 盘的示例配置",
+      "status": "pass",
+      "notes": "文档明确强调默认避免 C 盘，提供了多种路径方案"
+    },
+    {
+      "id": 3,
+      "name": "multi-version-management-test",
+      "prompt": "我需要同时测试 Chrome 120、127 和 Beta 版本，如何管理这些版本？",
+      "expected_behavior": "应该说明多版本并存的方法，包括独立目录结构和用户数据隔离",
+      "status": "pass",
+      "notes": "提供了推荐的目录结构和启动不同版本的方法"
+    },
+    {
+      "id": 4,
+      "name": "script-usage-test",
+      "prompt": "有没有自动化脚本可以快速安装 Chrome 多版本？",
+      "expected_behavior": "应该介绍 install-chrome-7zip.ps1 脚本的使用方法和参数",
+      "status": "pass",
+      "notes": "scripts 目录包含完整的自动化脚本，支持自定义路径"
+    },
+    {
+      "id": 5,
+      "name": "troubleshooting-test",
+      "prompt": "我安装的 Chrome 版本启动时报错，怎么办？",
+      "expected_behavior": "应该提供故障排查指南，包括常见问题和解决方案",
+      "status": "pass",
+      "notes": "SKILL.md 包含详细的故障排查章节，覆盖常见问题"
+    }
+  ],
+  "structure_check": {
+    "required_files": {
+      "SKILL.md": "present",
+      "reference.md": "present",
+      "scripts directory": "present"
+    },
+    "file_sizes": {
+      "SKILL.md": "15.0KB (合理)",
+      "reference.md": "6.9KB (合理)",
+      "install-chrome-7zip.ps1": "10.7KB (合理)",
+      "launch-chrome.ps1": "3.8KB (合理)",
+      "list-versions.ps1": "4.1KB (合理)"
+    },
+    "total_lines": {
+      "SKILL.md": 552,
+      "note": "略超过 500 行建议，但内容组织良好，可以考虑拆分部分内容到 reference.md"
+    }
+  },
+  "description_analysis": {
+    "current_description": "在 Windows 电脑上使用 7-Zip 解压方式安装和管理多个版本的 Chrome 浏览器，支持自定义安装路径（默认非 C 盘），实现多版本并存用于兼容性测试。当用户需要在 Windows 上安装多个 Chrome 版本、进行浏览器兼容性测试、或管理不同版本的 Chrome 时使用。",
+    "strengths": [
+      "明确说明了方法（7-Zip 解压）",
+      "强调了关键特性（自定义路径、默认非 C 盘）",
+      "包含了触发场景（安装多版本、兼容性测试、管理版本）",
+      "使用了第三人称描述"
+    ],
+    "suggestions": [
+      "可以更'pushy'一些，增加更多触发关键词",
+      "可以添加更多具体的用户可能使用的短语"
+    ],
+    "improved_description_suggestion": "在 Windows 电脑上使用 7-Zip 解压方式安装和管理多个版本的 Chrome 浏览器，支持自定义安装路径（默认非 C 盘），实现多版本并存用于兼容性测试。当用户提到 Chrome 多版本、浏览器兼容性测试、安装旧版本 Chrome、Chrome 版本管理、同时运行多个 Chrome、测试不同浏览器版本、Chrome 隔离环境、或者需要并排测试 Chrome 稳定版/Beta/Dev 版本时，必须使用此技能。也适用于用户询问如何在 Windows 上安装特定版本的 Chrome、如何避免 Chrome 自动更新、如何为不同项目使用不同的 Chrome 版本等场景。"
+  },
+  "script_validation": {
+    "syntax_check": {
+      "install-chrome-7zip.ps1": "passed",
+      "launch-chrome.ps1": "passed",
+      "list-versions.ps1": "passed"
+    },
+    "features_verified": [
+      "✅ 支持自定义安装路径（默认 D 盘）",
+      "✅ 安装前用户确认机制",
+      "✅ 磁盘空间检查",
+      "✅ 智能权限检查（仅 Program Files 需要管理员）",
+      "✅ 自动创建桌面快捷方式",
+      "✅ 临时文件自动清理",
+      "✅ 支持多种启动选项（无痕、无头、开发者工具、远程调试）",
+      "✅ 版本列表和状态显示"
+    ]
+  },
+  "quality_assessment": {
+    "documentation_quality": "excellent",
+    "code_quality": "good",
+    "user_friendliness": "excellent",
+    "completeness": "comprehensive",
+    "strengths": [
+      "详细的分步说明",
+      "清晰的目录结构示例",
+      "实用的 PowerShell 脚本",
+      "完善的故障排查指南",
+      "强调用户确认和路径选择",
+      "包含高级用法（Selenium/Puppeteer 集成）"
+    ],
+    "areas_for_improvement": [
+      "SKILL.md 略长（552 行），可以考虑将部分详细内容移到 reference.md",
+      "可以添加一个快速开始示例章节，展示最常用的命令",
+      "可以考虑添加视频教程或截图链接（如果有的话）"
+    ]
+  },
+  "overall_verdict": {
+    "status": "approved",
+    "rating": "4.5/5",
+    "summary": "这是一个高质量的 skill，文档完整、脚本实用、用户友好。主要优点是完全符合项目需求，强调自定义路径和用户确认。唯一的小建议是 SKILL.md 可以稍微精简，但这不影响使用。",
+    "ready_for_use": true
+  }
+}
