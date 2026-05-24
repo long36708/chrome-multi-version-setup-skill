@@ -1,7 +1,4 @@
-# 基于 7-Zip 的 Chrome 多版本安装脚本（使用集中式架构）
-# 使用方法: 
-#   .\install-chrome-structured.ps1 -Version "127.0.6533.120" -InstallerPath "C:\Downloads\chrome_127.exe" -BaseDir "D:\Chrome_Testing"
-
+# Non-interactive Chrome Installation Script (Auto-confirm)
 param(
     [Parameter(Mandatory=$true)]
     [string]$Version,
@@ -9,7 +6,7 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$InstallerPath,
     
-    [string]$BaseDir = ""
+    [string]$BaseDir = "D:\Chrome_Testing"
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,16 +26,11 @@ function Write-Error-Custom {
     Write-Host "[ERROR] $Message" -ForegroundColor Red
 }
 
-function Write-Warning-Custom {
-    param([string]$Message)
-    Write-Host "[WARNING] $Message" -ForegroundColor Yellow
-}
-
 function Find-7Zip {
     $paths = @(
+        "D:\Program Files\7-Zip\7z.exe",
         "C:\Program Files\7-Zip\7z.exe",
-        "C:\Program Files (x86)\7-Zip\7z.exe",
-        "$env:ProgramFiles\7-Zip\7z.exe"
+        "C:\Program Files (x86)\7-Zip\7z.exe"
     )
     
     foreach ($path in $paths) {
@@ -58,19 +50,20 @@ function Extract-With7Zip {
     
     $7zPath = Find-7Zip
     if (-not $7zPath) {
-        Write-Error-Custom "未找到 7-Zip，请先安装: https://www.7-zip.org/"
+        Write-Error-Custom "7-Zip not found. Please install from: https://www.7-zip.org/"
         exit 1
     }
     
-    Write-Info "使用 7-Zip 解压: $File"
+    Write-Info "Extracting with 7-Zip: $File"
+    Write-Info "7-Zip path: $7zPath"
     
     try {
         & $7zPath x $File -o"$OutputDir" -y | Out-Null
-        Write-Success "解压完成: $OutputDir"
+        Write-Success "Extraction completed: $OutputDir"
         return $true
     }
     catch {
-        Write-Error-Custom "解压失败: $_"
+        Write-Error-Custom "Extraction failed: $_"
         return $false
     }
 }
@@ -92,32 +85,21 @@ function Create-Shortcut {
     $Shortcut.WorkingDirectory = Split-Path $ChromeExe
     $Shortcut.Save()
     
-    Write-Success "创建快捷方式: $ShortcutFile"
+    Write-Success "Shortcut created: $ShortcutFile"
 }
 
 function Main {
     Write-Info "========================================="
-    Write-Info "Chrome $Version 安装程序 (集中式架构)"
+    Write-Info "Chrome $Version Installer (Auto Mode)"
     Write-Info "========================================="
     
-    # 检查安装包是否存在
+    # Check if installer exists
     if (-not (Test-Path $InstallerPath)) {
-        Write-Error-Custom "安装包不存在: $InstallerPath"
+        Write-Error-Custom "Installer not found: $InstallerPath"
         exit 1
     }
     
-    # 确定根目录
-    if ([string]::IsNullOrWhiteSpace($BaseDir)) {
-        if (Test-Path "D:\") {
-            $BaseDir = "D:\Chrome_Testing"
-        }
-        else {
-            $BaseDir = Join-Path $env:USERPROFILE "Chrome_Testing"
-            Write-Warning-Custom "D 盘不存在，使用用户目录作为默认路径"
-        }
-    }
-    
-    # 定义目录结构
+    # Define directory structure
     $downloadsDir = Join-Path $BaseDir "downloads"
     $versionsDir = Join-Path $BaseDir "versions"
     $versionDir = Join-Path $versionsDir $Version
@@ -125,39 +107,29 @@ function Main {
     $userDataDir = Join-Path $BaseDir "user_data\$Version"
     $shortcutsDir = Join-Path $BaseDir "shortcuts"
     
-    # 显示配置并等待确认
-    Write-Host ""
-    Write-Host "安装配置:" -ForegroundColor Cyan
-    Write-Host "  版本: $Version" -ForegroundColor White
-    Write-Host "  根目录: $BaseDir" -ForegroundColor White
-    Write-Host "  版本目录: $versionDir" -ForegroundColor White
-    Write-Host "  数据目录: $userDataDir" -ForegroundColor White
-    Write-Host ""
-    Write-Host "Continue? (Y/N): " -NoNewline -ForegroundColor Yellow
+    Write-Info "Installation Configuration:"
+    Write-Info "  Version: $Version"
+    Write-Info "  Base Directory: $BaseDir"
+    Write-Info "  Version Directory: $versionDir"
+    Write-Info "  User Data Directory: $userDataDir"
     
-    $confirm = Read-Host
-    if ($confirm -ne 'Y' -and $confirm -ne 'y') {
-        Write-Info "安装已取消"
-        exit 0
-    }
-    
-    # 创建必要的目录结构
-    Write-Info "创建目录结构..."
+    # Create necessary directories
+    Write-Info "Creating directory structure..."
     @($downloadsDir, $versionsDir, $versionDir, $userDataDir, $shortcutsDir) | ForEach-Object {
         if (-not (Test-Path $_)) {
             New-Item -ItemType Directory -Path $_ -Force | Out-Null
         }
     }
-    Write-Success "目录结构创建完成"
+    Write-Success "Directory structure created"
     
-    # 复制安装包到 downloads 目录（可选）
+    # Copy installer to downloads directory
     $installerDest = Join-Path $downloadsDir (Split-Path $InstallerPath -Leaf)
     if (-not (Test-Path $installerDest)) {
         Copy-Item $InstallerPath $installerDest -Force
-        Write-Info "安装包已复制到: $installerDest"
+        Write-Info "Installer copied to: $installerDest"
     }
     
-    # 创建临时工作目录
+    # Create temporary working directory
     $workDir = Join-Path $env:TEMP "chrome-install-$Version"
     if (Test-Path $workDir) {
         Remove-Item $workDir -Recurse -Force
@@ -165,19 +137,19 @@ function Main {
     New-Item -ItemType Directory -Path $workDir -Force | Out-Null
     
     try {
-        # 步骤 1: 解压安装包
-        Write-Info "步骤 1: 解压安装包..."
+        # Step 1: Extract installer
+        Write-Info "Step 1/9: Extracting installer..."
         $extractedDir = Join-Path $workDir "extracted"
         if (-not (Extract-With7Zip -File $InstallerPath -OutputDir $extractedDir)) {
             exit 1
         }
         
-        # 步骤 2: 查找并解压 updater.zip
-        Write-Info "步骤 2: 解压 updater.zip..."
+        # Step 2: Find and extract updater.zip
+        Write-Info "Step 2/9: Extracting updater.zip..."
         $updaterZip = Get-ChildItem $extractedDir -Filter "updater.zip" -Recurse | Select-Object -First 1
         
         if (-not $updaterZip) {
-            Write-Error-Custom "未找到 updater.zip"
+            Write-Error-Custom "updater.zip not found"
             exit 1
         }
         
@@ -186,37 +158,37 @@ function Main {
             exit 1
         }
         
-        # 步骤 3: 查找 chrome_installer
-        Write-Info "步骤 3: 查找 chrome_installer..."
+        # Step 3: Find chrome_installer
+        Write-Info "Step 3/9: Finding chrome_installer..."
         $offlineDir = Get-ChildItem $updaterDir -Filter "Offline" -Recurse -Directory | Select-Object -First 1
         
         if (-not $offlineDir) {
-            Write-Error-Custom "未找到 Offline 目录"
+            Write-Error-Custom "Offline directory not found"
             exit 1
         }
         
-        $chromeInstaller = Get-ChildItem $offlineDir.Parent.Parent -Filter "*${Version}*installer*" -File | Select-Object -First 1
+        $chromeInstaller = Get-ChildItem $offlineDir.Parent.Parent -Filter "*installer*" -File | Select-Object -First 1
         
         if (-not $chromeInstaller) {
-            Write-Error-Custom "未找到 chrome_installer 文件"
+            Write-Error-Custom "chrome_installer file not found"
             exit 1
         }
         
-        Write-Info "找到 installer: $($chromeInstaller.Name)"
+        Write-Info "Found installer: $($chromeInstaller.Name)"
         
-        # 步骤 4: 解压 chrome_installer
-        Write-Info "步骤 4: 解压 chrome_installer..."
+        # Step 4: Extract chrome_installer
+        Write-Info "Step 4/9: Extracting chrome_installer..."
         $installerExtractDir = Join-Path $workDir "installer_extracted"
         if (-not (Extract-With7Zip -File $chromeInstaller.FullName -OutputDir $installerExtractDir)) {
             exit 1
         }
         
-        # 步骤 5: 解压 chrome.zip
-        Write-Info "步骤 5: 解压 chrome.zip..."
+        # Step 5: Extract chrome.zip
+        Write-Info "Step 5/9: Extracting chrome.zip..."
         $chromeZip = Get-ChildItem $installerExtractDir -Filter "chrome.zip" -Recurse | Select-Object -First 1
         
         if (-not $chromeZip) {
-            Write-Error-Custom "未找到 chrome.zip"
+            Write-Error-Custom "chrome.zip not found"
             exit 1
         }
         
@@ -225,65 +197,65 @@ function Main {
             exit 1
         }
         
-        # 步骤 6: 查找 Chrome-bin 目录
-        Write-Info "步骤 6: 准备安装目录..."
+        # Step 6: Find Chrome-bin directory
+        Write-Info "Step 6/9: Preparing installation directory..."
         $chromeBinFolder = Get-ChildItem $chromeBinTempDir -Filter "Chrome-bin" -Directory | Select-Object -First 1
         
         if (-not $chromeBinFolder) {
-            Write-Error-Custom "未找到 Chrome-bin 目录"
+            Write-Error-Custom "Chrome-bin directory not found"
             exit 1
         }
         
-        # 步骤 7: 复制文件到 versions 目录
-        Write-Info "步骤 7: 复制 Chrome 文件到 $chromeBinDir..."
+        # Step 7: Copy files to versions directory
+        Write-Info "Step 7/9: Copying Chrome files to $chromeBinDir..."
         Copy-Item "$($chromeBinFolder.FullName)\*" -Destination $chromeBinDir -Recurse -Force
-        Write-Success "文件复制完成"
+        Write-Success "Files copied successfully"
         
-        # 步骤 8: 验证安装
+        # Step 8: Verify installation
         $chromeExe = Join-Path $chromeBinDir "chrome.exe"
         if (Test-Path $chromeExe) {
-            Write-Success "Chrome $Version 安装成功！"
-            Write-Info "可执行文件: $chromeExe"
+            Write-Success "Chrome $Version installed successfully!"
+            Write-Info "Executable: $chromeExe"
             
-            # 获取版本信息
+            # Get version info
             try {
                 $versionInfo = & $chromeExe --version
-                Write-Info "版本信息: $versionInfo"
+                Write-Info "Version info: $versionInfo"
             }
             catch {
-                Write-Info "无法获取版本信息"
+                Write-Info "Unable to get version info"
             }
         }
         else {
-            Write-Error-Custom "安装可能失败，未找到 chrome.exe"
+            Write-Error-Custom "Installation may have failed, chrome.exe not found"
             exit 1
         }
         
-        # 步骤 9: 创建快捷方式
-        Write-Info "步骤 9: 创建快捷方式..."
+        # Step 9: Create shortcut
+        Write-Info "Step 9/9: Creating shortcut..."
         Create-Shortcut -ChromeExe $chromeExe -UserDataDir $userDataDir -Version $Version -ShortcutsDir $shortcutsDir
         
         Write-Info "========================================="
-        Write-Success "安装完成！"
+        Write-Success "Installation Complete!"
         Write-Info "========================================="
         Write-Info ""
-        Write-Info "目录结构:"
-        Write-Info "  版本文件: $chromeBinDir"
-        Write-Info "  用户数据: $userDataDir"
-        Write-Info "  快捷方式: $shortcutsDir\Chrome_${Version}.lnk"
+        Write-Info "Directory Structure:"
+        Write-Info "  Version Files: $chromeBinDir"
+        Write-Info "  User Data: $userDataDir"
+        Write-Info "  Shortcut: $shortcutsDir\Chrome_${Version}.lnk"
         Write-Info ""
-        Write-Info "启动命令:"
+        Write-Info "Launch Command:"
         Write-Info "& `"$chromeExe`" --user-data-dir=`"$userDataDir`""
         
     }
     catch {
-        Write-Error-Custom "安装过程中出错: $_"
+        Write-Error-Custom "Error during installation: $_"
         throw
     }
     finally {
-        # 清理临时文件
+        # Clean up temporary files
         if (Test-Path $workDir) {
-            Write-Info "清理临时文件..."
+            Write-Info "Cleaning up temporary files..."
             Remove-Item $workDir -Recurse -Force -ErrorAction SilentlyContinue
         }
     }

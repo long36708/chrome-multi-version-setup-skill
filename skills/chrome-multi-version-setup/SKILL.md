@@ -125,8 +125,11 @@ D:\Chrome_Testing\              # 根目录（统一管理）
 #### 步骤 1: 下载 Chrome 旧版本
 
 访问以下网站下载所需的 Chrome 版本：
+- https://vikyd.github.io/download-chromium-history-version/#/
 - **Uptodown**: https://google-chrome.en.uptodown.com/windows/versions
 - **GitHub**: https://github.com/Bush2021/chrome_installer
+- https://www.slimjet.com/chrome/google-chrome-old-version.php
+- https://google-chrome.en.uptodown.com/windows/versions
 - 选择目标版本（例如：**127.0.6533.120**）
 - 下载 `.exe` 文件到 `D:\Chrome_Testing\downloads\`
 
